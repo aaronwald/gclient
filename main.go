@@ -20,17 +20,6 @@ const (
 func main() {
 	fmt.Println("Sending request...")
 
-	test := &msg.CoypuRequest {
-		Type: msg.CoypuRequest_BOOK_SNAPSHOT_REQUEST,
-		Message: &msg.CoypuRequest_Snap {
-			Snap: &msg.BookSnapshot {
-				Key: defaultPair,
-				Source: 1,
-				Levels: 5,
-			},
-		},
-	}
-
 	// Set up a connection to the server.
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
@@ -39,27 +28,42 @@ func main() {
 	defer conn.Close()
 	c := msg.NewCoypuServiceClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	r, err := c.RequestData(ctx, test)
-	if err != nil {
-		log.Fatalf("could not greet: %v", err)
-	}
-	if r.Type == msg.CoypuMessage_BOOK_SNAP {
-		snap := r.GetSnap()
-
-		bidBook := snap.GetBid()
-		for _, level := range bidBook {
-			log.Printf(" Bid %f @ %f", level.Qty, level.Px)
+	var i uint32 = 0
+	for i = 0; i < 10; i++ {
+		test := &msg.CoypuRequest {
+			Type: msg.CoypuRequest_BOOK_SNAPSHOT_REQUEST,
+			Message: &msg.CoypuRequest_Snap {
+				Snap: &msg.BookSnapshot {
+					Key: defaultPair,
+					Source: 1,
+					Levels: i,
+				},
+			},
 		}
 
-		askBook := snap.GetAsk()
-		for _, level := range askBook {
-			log.Printf(" Ask %f @ %f", level.Qty, level.Px)
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		r, err := c.RequestData(ctx, test)
+		if err != nil {
+			log.Fatalf("could not greet: %v", err)
 		}
-
-	} else {
-		log.Printf("Coypu Request Type: %d", r.Type)
-		fmt.Println(proto.MarshalTextString(r))
+		if r.Type == msg.CoypuMessage_BOOK_SNAP {
+			snap := r.GetSnap()
+			
+			bidBook := snap.GetBid()
+			for x, level := range bidBook {
+				log.Printf(" Bid %2d. %14.8f @ %-14.4f", x+1, level.Qty/100000000.0, level.Px/100000000.0)
+			}
+			
+			askBook := snap.GetAsk()
+			for x, level := range askBook {
+				log.Printf(" Ask %2d. %14.8f @ %-14.4f", x+1, level.Qty/100000000.0, level.Px/100000000.0)
+			}
+			
+		} else {
+			log.Printf("Coypu Request Type: %d", r.Type)
+			fmt.Println(proto.MarshalTextString(r))
+		}
+		time.Sleep(time.Duration(i) * 200 * time.Millisecond)
 	}
 }
