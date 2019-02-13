@@ -13,12 +13,12 @@ import (
 
 const (
 	address     = "localhost:8089"
-	defaultPair = "BTC/USD"
+	defaultPair = "BTC-GBP"
 )
 
 
 func main() {
-	fmt.Println("Hello, world.")
+	fmt.Println("Sending request...")
 
 	test := &msg.CoypuRequest {
 		Type: msg.CoypuRequest_BOOK_SNAPSHOT_REQUEST,
@@ -26,6 +26,7 @@ func main() {
 			Snap: &msg.BookSnapshot {
 				Key: defaultPair,
 				Source: 1,
+				Levels: 5,
 			},
 		},
 	}
@@ -44,6 +45,21 @@ func main() {
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
-	log.Printf("Coypu Request Type: %d", r.Type)
-	fmt.Println(proto.MarshalTextString(r))
+	if r.Type == msg.CoypuMessage_BOOK_SNAP {
+		snap := r.GetSnap()
+
+		bidBook := snap.GetBid()
+		for _, level := range bidBook {
+			log.Printf(" Bid %f @ %f", level.Qty, level.Px)
+		}
+
+		askBook := snap.GetAsk()
+		for _, level := range askBook {
+			log.Printf(" Ask %f @ %f", level.Qty, level.Px)
+		}
+
+	} else {
+		log.Printf("Coypu Request Type: %d", r.Type)
+		fmt.Println(proto.MarshalTextString(r))
+	}
 }
