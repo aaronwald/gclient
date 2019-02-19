@@ -8,12 +8,12 @@ import (
 	"github.com/golang/protobuf/proto"
 	"context"
 	"time"
+	"os"
 )
 
-
 const (
-	address     = "localhost:8089"
-	defaultPair = "BTC-GBP"
+	//address     = "localhost:8089"
+	address = "34.73.57.122:80"
 )
 
 
@@ -29,12 +29,12 @@ func main() {
 	c := msg.NewCoypuServiceClient(conn)
 
 	var i uint32 = 0
-	for i = 0; i < 10; i++ {
+	for i = 1; i <= 10; i++ {
 		test := &msg.CoypuRequest {
 			Type: msg.CoypuRequest_BOOK_SNAPSHOT_REQUEST,
 			Message: &msg.CoypuRequest_Snap {
 				Snap: &msg.BookSnapshot {
-					Key: defaultPair,
+					Key: os.Args[1],
 					Source: 1,
 					Levels: i,
 				},
